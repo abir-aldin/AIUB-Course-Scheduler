@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIUB Class Scheduler</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<header><div><b>AIUB Class Scheduler</b><small>Course search • automatic section selection</small></div></header>
+<main>
+<section class="card">
+<h2>1. Upload Offered Courses Excel</h2>
+<div id="drop" class="drop">
+<p><b>Drag & drop</b> your Excel file here</p>
+<p>or</p>
+<button id="browse" type="button">Choose Excel File</button>
+<input id="file" type="file" accept=".xlsx,.xls,.csv" hidden>
+<div id="fname"></div>
+</div>
+</section>
+
+<section id="setup" class="card hidden">
+<h2>2. Scheduler Settings</h2>
+<div class="grid">
+<label>Minimum Count (X)
+<input id="minCount" type="number" min="0" value="1">
+<small>Eligible: Count ≥ X</small></label>
+<label>Maximum Count (Y)
+<input id="maxCount" type="number" min="0" value="30">
+<small>Eligible: Count ≤ Y</small></label>
+<label>Number of Schedules
+<input id="n" type="number" min="1" max="50" value="10"></label>
+<label>Section Preference
+<select id="pref">
+<option value="low">Prefer lower count</option>
+<option value="high">Prefer higher count</option>
+<option value="random">Varied combinations</option>
+</select></label>
+</div>
+
+<h2>3. Constant / Fixed Courses</h2>
+<div class="fixed-box">
+  <label class="toggle-row">
+    <input id="useFixed" type="checkbox">
+    <span>Use Constant Courses?</span>
+  </label>
+  <div id="fixedSettings" class="hidden">
+    <div class="grid fixed-count-grid">
+      <label>How many constant courses?
+        <input id="fixedCount" type="number" min="1" max="10" value="1">
+        <small>These course + section choices will stay locked.</small>
+      </label>
+    </div>
+    <div id="fixedRows" class="fixed-rows"></div>
+    <div id="fixedMessage" class="muted"></div>
+  </div>
+</div>
+
+<h2>4. Search & Select Courses</h2>
+<div class="search"><input id="search" placeholder="Search course code or course name"></div>
+<div class="actions">
+<button id="visible" type="button">Select visible</button>
+<button id="clear" type="button">Clear all</button>
+<span id="selected">0 courses selected</span>
+</div>
+<div id="courses" class="courses"></div>
+<button id="generate" class="primary" type="button">Create Schedule</button>
+</section>
+
+<section id="resultCard" class="card hidden">
+<h2>5. Generated Schedules</h2>
+<p id="info"></p>
+<button id="more" type="button">Create more</button>
+<div class="note">You select courses only. Sections are selected automatically. Only <b>Open</b> sections are countable. Schedules are ranked from <b>smallest class gap to largest</b>.</div>
+<div id="results"></div>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

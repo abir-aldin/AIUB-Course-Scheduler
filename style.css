@@ -1,0 +1,39 @@
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:#172033;font-family:Arial,sans-serif}
+header{height:70px;background:#fff;border-bottom:1px solid #ddd;padding:0 7%;display:flex;align-items:center}
+header b{font-size:19px} header small{display:block;color:#788195;margin-top:3px}
+main{max-width:1050px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border:1px solid #e1e4eb;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 6px 25px #00000008}
+.drop{border:2px dashed #cdd3df;border-radius:14px;text-align:center;padding:42px 20px}
+.drop.drag{border-color:#505cdc;background:#f3f5ff}
+.drop button,.primary,button{border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;background:#edf0f7;color:#26304a}
+.primary{background:#505cdc;color:white;margin-top:18px}
+#fname{margin-top:12px;color:#505cdc;font-weight:700;font-size:13px}
+.hidden{display:none}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.grid label{font-size:13px;font-weight:700}
+.grid input,.grid select,.search input{display:block;width:100%;margin-top:7px;padding:11px;border:1px solid #d6dae5;border-radius:9px;font:inherit;background:#fff}
+.grid small{display:block;color:#7b8497;font-weight:400;margin-top:5px}
+.search{margin:18px 0}.search input{margin:0}
+.actions{display:flex;gap:8px;align-items:center;margin-bottom:12px}.actions span{margin-left:auto;color:#687287;font-size:13px}
+.courses{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;max-height:430px;overflow:auto}
+.course{border:1px solid #e0e3ea;border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center}
+.course input{accent-color:#505cdc}.course .name{min-width:0}.course .code{font-weight:800}
+.course .title{font-size:12px;color:#7b8497;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{margin-left:auto;background:#f0f2f7;border-radius:20px;padding:5px 8px;font-size:11px;white-space:nowrap}
+.note{background:#f3f5ff;padding:11px;border-radius:9px;color:#4c57a9;margin:14px 0;font-size:13px}
+.schedule{border:1px solid #e0e3ea;border-radius:12px;margin:12px 0;overflow:auto}
+.sh{background:#f8f9fc;padding:12px;font-weight:700}.routine{width:100%;border-collapse:collapse;font-size:12px}
+.routine th,.routine td{padding:9px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+.pill{background:#eef0ff;color:#4d58c8;padding:4px 7px;border-radius:6px;font-weight:700}
+@media(max-width:750px){.grid,.courses{grid-template-columns:1fr}.actions{flex-wrap:wrap}.actions span{margin-left:0;width:100%}}
+.fixed-box{border:1px solid #e0e3ea;border-radius:12px;padding:15px;margin:12px 0 22px;background:#fafbfe}
+.toggle-row{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}
+.toggle-row input{width:18px;height:18px;accent-color:#505cdc}
+.fixed-count-grid{margin-top:14px;grid-template-columns:minmax(240px,360px)}
+.fixed-rows{display:grid;gap:10px;margin-top:14px}
+.fixed-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;border:1px solid #e4e7ee;border-radius:10px;padding:12px;background:#fff}
+.fixed-row label{font-size:13px;font-weight:700}
+.fixed-row select{display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #d6dae5;border-radius:9px;background:#fff;font:inherit}
+.fixed-status{font-size:12px;color:#6f788b;padding-bottom:10px}
+@media(max-width:750px){.fixed-row{grid-template-columns:1fr}}
