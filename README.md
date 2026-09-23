@@ -1,6 +1,6 @@
 # AIUB Course Scheduler
 
-![AIUB Course Scheduler Banner](banner.png)
+![AIUB Course Scheduler Banner](assets/banner.png)
 
 An automated web-based course scheduling system designed for AIUB students to generate optimized and clash-free class routines.
 
