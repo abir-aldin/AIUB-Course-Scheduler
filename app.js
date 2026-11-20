@@ -42,6 +42,9 @@ function mapRow(r){
   const rk=findKey(r,['room','room no','room number']);
   const stk=findKey(r,['status','section status','class status','availability']);
 
+  const idk=findExactKey(r,['class id','classid']);
+  const typek=findExactKey(r,['type','course type','class type']);
+
   const codeRaw=String(ck?r[ck]:'').trim();
   const nameRaw=String(nk?r[nk]:'').trim();
   const explicit=String(sk?r[sk]:'').trim();
@@ -62,6 +65,8 @@ function mapRow(r){
   const time=(start && end) ? `${start} - ${end}` : rawTime;
 
   return {
+    classId:String(idk?r[idk]:'').trim(),
+    type:String(typek?r[typek]:'').trim(),
     code,course,section,
     count:num(cnt?r[cnt]:''),
     days:String(dk?r[dk]:'').trim(),
@@ -70,6 +75,43 @@ function mapRow(r){
     room:String(rk?r[rk]:'').trim(),
     status:(String(stk?r[stk]:'').trim() || 'Open')
   };
+}
+
+// Combine all Excel rows belonging to the same Class ID
+function aggregateSectionRows(sectionRows){
+
+  const grouped=new Map();
+
+  sectionRows.forEach((r,index)=>{
+
+    const key=r.classId
+      ? `id:${r.classId}`
+      : `row:${index}`;
+
+    if(!grouped.has(key)){
+
+      grouped.set(key,{
+        ...r,
+        meetings:[]
+      });
+
+    }
+
+    const option=grouped.get(key);
+
+    option.meetings.push({
+
+      days:r.days,
+      time:r.time,
+      type:r.type,
+      faculty:r.faculty,
+      room:r.room
+
+    });
+
+  });
+
+  return [...grouped.values()];
 }
 
 async function loadFile(file){
@@ -100,6 +142,13 @@ async function loadFile(file){
       const groupKey=norm(r.code||r.course);
       if(groupKey)(groups[groupKey]??=[]).push(r);
     }
+
+    // Convert raw Excel rows into complete section options
+for(const [groupKey,sectionRows] of Object.entries(groups)){
+
+  groups[groupKey]=aggregateSectionRows(sectionRows);
+
+}
 
     selected.clear();
     generated=[];
@@ -230,6 +279,260 @@ function displayTime(v){
   return `${formatTimeValue(r[0])} – ${formatTimeValue(r[1])}`;
 }
 
+function displayScheduleMeetings(r){
+
+  const entries=Array.isArray(r.meetings) && r.meetings.length
+    ? r.meetings
+    : [r];
+
+  return entries.map(m=>{
+
+    const day=esc(m.days||'-');
+    const time=esc(displayTime(m.time)||'-');
+
+    const type=m.type
+      ? ` <span class="pill">${esc(m.type)}</span>`
+      : '';
+
+    return `
+      <div class="schedule-meeting">
+        <strong>${day}</strong><br>
+        ${time}${type}
+      </div>
+    `;
+
+  }).join('<hr>');
+
+}
+
+
+// Build weekly table for a generated schedule
+function buildWeeklyTable(schedule){
+
+  const weekDays=[
+    {key:'SU',label:'Sunday'},
+    {key:'M',label:'Monday'},
+    {key:'T',label:'Tuesday'},
+    {key:'W',label:'Wednesday'},
+    {key:'R',label:'Thursday'},
+    {key:'F',label:'Friday'},
+    {key:'S',label:'Saturday'}
+  ];
+
+  const byDay=Object.fromEntries(
+    weekDays.map(day=>[day.key,[]])
+  );
+
+  schedule.forEach(course=>{
+
+  const entries=Array.isArray(course.meetings) && course.meetings.length
+    ? course.meetings
+    : [course];
+
+  entries.forEach(meeting=>{
+
+    normalizeDayTokens(meeting.days).forEach(day=>{
+
+      if(byDay[day]){
+
+        byDay[day].push({
+          ...course,
+          ...meeting
+        });
+
+      }
+
+    });
+
+  });
+
+});
+
+  const body=weekDays.map(day=>{
+
+    const classes=[...byDay[day.key]].sort((a,b)=>{
+      const timeA=timeRange(a.time);
+      const timeB=timeRange(b.time);
+
+      return (timeA?timeA[0]:Infinity)-
+             (timeB?timeB[0]:Infinity);
+    });
+
+    const scheduleHtml=classes.length
+      ? `<div class="weekly-entries">
+          ${classes.map(course=>`
+            <div class="weekly-entry">
+
+              <div class="weekly-entry-time">
+                ${esc(displayTime(course.time))}
+              </div>
+
+              <div class="weekly-entry-course">
+                <strong>${esc(course.code||course.course||'Course')}</strong>
+                ${course.course&&course.course!==course.code
+                  ? `<span>${esc(course.course)}</span>`
+                  : ''}
+              </div>
+
+              <div class="weekly-entry-details">
+                Section: <strong>${esc(course.section||'-')}</strong>
+                <span>•</span>
+                Section Count: <strong>${esc(course.count)}</strong>
+              </div>
+
+            </div>
+          `).join('')}
+        </div>`
+      : '<span class="weekly-no-class">No classes</span>';
+
+    return `
+      <tr>
+        <th scope="row">${day.label}</th>
+        <td>${scheduleHtml}</td>
+      </tr>
+    `;
+
+  }).join('');
+
+  return `
+    <table class="weekly-table">
+
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>All Time Schedule</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        ${body}
+      </tbody>
+
+    </table>
+  `;
+}
+
+
+// Open weekly schedule popup
+function openWeeklyModal(schedule,scheduleNumber){
+
+  $('weeklyModalTitle').textContent =
+    `Schedule ${scheduleNumber} — Weekly Table`;
+
+  $('weeklyTableContainer').innerHTML =
+    buildWeeklyTable(schedule);
+
+  $('weeklyModal').classList.remove('hidden');
+
+  document.body.classList.add('modal-open');
+}
+
+
+// Close weekly schedule popup
+function closeWeeklyModal(){
+
+  $('weeklyModal').classList.add('hidden');
+
+  document.body.classList.remove('modal-open');
+}
+
+
+async function downloadWeeklyPNG(){
+
+  const panel=$('weeklyModal').querySelector('.weekly-modal-panel');
+
+  if(typeof html2canvas==='undefined'){
+    alert('PNG export library could not load. Please check your internet connection.');
+    return;
+  }
+
+  const button=$('downloadWeeklyPng');
+
+  try{
+
+    button.disabled=true;
+    button.textContent='Generating PNG...';
+
+    const canvas=await html2canvas(panel,{
+
+      scale:2,
+      backgroundColor:'#ffffff',
+      useCORS:true,
+      logging:false,
+
+      width:panel.scrollWidth,
+      height:panel.scrollHeight,
+
+      windowWidth:panel.scrollWidth,
+      windowHeight:panel.scrollHeight,
+
+      onclone:(clonedDoc)=>{
+
+        const clonedPanel=clonedDoc.querySelector('.weekly-modal-panel');
+
+        if(clonedPanel){
+
+          clonedPanel.style.maxHeight='none';
+          clonedPanel.style.height='auto';
+          clonedPanel.style.overflow='visible';
+
+        }
+
+        const tableContainer=clonedDoc.querySelector('.weekly-table-container');
+
+        if(tableContainer){
+          tableContainer.style.overflow='visible';
+        }
+
+      }
+
+    });
+
+    canvas.toBlob(blob=>{
+
+      if(!blob){
+        alert('Could not generate PNG image.');
+        return;
+      }
+
+      const url=URL.createObjectURL(blob);
+
+      const link=document.createElement('a');
+
+      const title=$('weeklyModalTitle').textContent
+        .replace(/[^a-z0-9]+/gi,'-')
+        .replace(/^-|-$/g,'');
+
+      link.href=url;
+      link.download=`${title}.png`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+
+    },'image/png');
+
+  }
+  catch(error){
+
+    console.error('PNG Export Error:',error);
+
+    alert('Unable to download PNG. Please try again.');
+
+  }
+  finally{
+
+    button.disabled=false;
+    button.textContent='⬇ Download PNG';
+
+  }
+
+}
+
+
+
 function isLabCourse(r){
   const text=`${r.code||''} ${r.course||''}`.toLowerCase();
   return /\b(lab|laboratory|practical)\b/.test(text);
@@ -277,33 +580,77 @@ function normalizeDayTokens(v){
   Monday + Wednesday share the same repeated class-time slot.
   Lab/practical classes keep their exact day identity.
 */
-function logicalDays(r){
-  const days=normalizeDayTokens(r.days);
 
-  if(isLabCourse(r)) return days;
+function logicalDays(r,meeting=r){
 
+  const days=normalizeDayTokens(meeting.days);
+
+  const type=String(meeting.type||'')
+    .trim()
+    .toLowerCase();
+
+  // Use the actual meeting type from Excel
+  const lab=type
+    ? /\b(lab|laboratory|practical)\b/.test(type)
+    : isLabCourse(r);
+
+  // Lab classes retain their actual weekdays
+  if(lab) return days;
+
+  // Preserve existing AIUB theory scheduling logic
   const out=[];
+
   for(const d of days){
-    if(d==='SU' || d==='T') out.push('SUN_TUE');
-    else if(d==='M' || d==='W') out.push('MON_WED');
-    else out.push(d);
+
+    if(d==='SU' || d==='T'){
+      out.push('SUN_TUE');
+    }
+    else if(d==='M' || d==='W'){
+      out.push('MON_WED');
+    }
+    else{
+      out.push(d);
+    }
+
   }
 
   return [...new Set(out)];
 }
 
+
 function meetings(r){
-  const range=timeRange(r.time);
-  const days=logicalDays(r);
 
-  if(!range || range[1]<=range[0] || !days.length) return [];
+  // Use all meetings belonging to this section
+  const entries=Array.isArray(r.meetings) && r.meetings.length
+    ? r.meetings
+    : [r];
 
-  return days.map(day=>({
-    day,
-    start:range[0],
-    end:range[1]
-  }));
+  const result=[];
+
+  for(const entry of entries){
+
+    const range=timeRange(entry.time);
+    const days=logicalDays(r,entry);
+
+    if(!range || range[1]<=range[0] || !days.length){
+      continue;
+    }
+
+    days.forEach(day=>{
+
+      result.push({
+        day,
+        start:range[0],
+        end:range[1]
+      });
+
+    });
+
+  }
+
+  return result;
 }
+
 
 function conflict(a,b){
   const ma=meetings(a);
@@ -364,7 +711,11 @@ function sortSchedulesByGap(list){
 }
 
 function signature(s){
-  return s.map(x=>(x.code||x.course)+'|'+x.section).sort().join('||');
+
+  return s.map(x=>
+    `${x.classId||''}|${x.code||x.course}|${x.section}`
+  ).sort().join('||');
+
 }
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){
@@ -616,29 +967,99 @@ function generate(more=false){
 
   const fixedSigs=new Set(fixedSections.map(x=>signature([x])));
 
-  generated.forEach((schedule,i)=>{
-    const gap=scheduleGap(schedule);
-    const card=document.createElement('div');
-    card.className='schedule';
-    card.innerHTML=
-      `<div class="sh">Schedule ${i+1} — Total Gap: ${gap.total} min${gap.largest?` • Largest Single Gap: ${gap.largest} min`:''}</div>
-       <table class="routine">
-       <thead><tr><th>Course</th><th>Section</th><th>Type</th><th>Day / Time</th><th>Faculty</th><th>Room</th><th>Status</th><th>Count</th></tr></thead>
-       <tbody>${schedule.map(x=>{
-         const fixed=fixedSigs.has(signature([x]));
-         return `<tr>
-           <td><b>${esc(x.code)}</b><br>${esc(x.course)}</td>
-           <td><span class="pill">${esc(x.section||'-')}</span></td>
-           <td>${fixed?'<span class="pill">Constant</span>':'Auto'}</td>
-           <td>${esc(x.days||'-')}<br>${esc(displayTime(x.time))}</td>
-           <td>${esc(x.faculty||'-')}</td>
-           <td>${esc(x.room||'-')}</td>
-           <td><span class="pill">${esc(x.status||'Open')}</span></td>
-           <td>${x.count}</td>
-         </tr>`;
-       }).join('')}</tbody></table>`;
-    result.appendChild(card);
-  });
+
+    
+generated.forEach((schedule,i)=>{
+
+  const gap=scheduleGap(schedule);
+
+  const card=document.createElement('div');
+  card.className='schedule';
+
+  card.innerHTML=
+    `<div class="sh">
+
+       <div>
+         Schedule ${i+1} — Total Gap: ${gap.total} min
+         ${gap.largest?` • Largest Single Gap: ${gap.largest} min`:''}
+       </div>
+
+       <button class="weekly-view-btn" type="button">
+         View Weekly Table
+       </button>
+
+     </div>
+
+     <table class="routine">
+
+       <thead>
+         <tr>
+           <th>Course</th>
+           <th>Section</th>
+           <th>Type</th>
+           <th>Day / Time</th>
+           <th>Faculty</th>
+           <th>Room</th>
+           <th>Status</th>
+           <th>Count</th>
+         </tr>
+       </thead>
+
+       <tbody>
+         ${schedule.map(x=>{
+
+           const fixed=fixedSigs.has(signature([x]));
+
+           return `<tr>
+
+             <td>
+               <b>${esc(x.code)}</b><br>
+               ${esc(x.course)}
+             </td>
+
+             <td>
+               <span class="pill">${esc(x.section||'-')}</span>
+             </td>
+
+             <td>
+               ${fixed
+                 ? '<span class="pill">Constant</span>'
+                 : 'Auto'}
+             </td>
+
+            <td>
+              ${displayScheduleMeetings(x)}
+            </td>
+
+             <td>${esc(x.faculty||'-')}</td>
+             <td>${esc(x.room||'-')}</td>
+
+             <td>
+               <span class="pill">${esc(x.status||'Open')}</span>
+             </td>
+
+             <td>${x.count}</td>
+
+           </tr>`;
+
+         }).join('')}
+
+       </tbody>
+     </table>`;
+
+  // Weekly Table Button
+  card.querySelector('.weekly-view-btn')
+    .addEventListener('click',()=>{
+
+      openWeeklyModal(schedule,i+1);
+
+    });
+
+  result.appendChild(card);
+
+});
+
+  
 }
 
 $('browse').addEventListener('click',()=>{
@@ -683,3 +1104,38 @@ $('clear').addEventListener('click',()=>{
 });
 $('generate').addEventListener('click',()=>generate(false));
 $('more').addEventListener('click',()=>generate(true));
+
+
+// Close popup using close button
+$('closeWeeklyModal').addEventListener('click',closeWeeklyModal);
+
+
+// Close popup by clicking outside
+$('weeklyModal').addEventListener('click',e=>{
+
+  if(e.target.hasAttribute('data-close-weekly')){
+    closeWeeklyModal();
+  }
+
+});
+
+
+// Close popup using Escape key
+document.addEventListener('keydown',e=>{
+
+  if(
+    e.key==='Escape' &&
+    !$('weeklyModal').classList.contains('hidden')
+  ){
+
+    closeWeeklyModal();
+
+  }
+
+});
+
+// Download Weekly Table as PNG
+$('downloadWeeklyPng').addEventListener(
+  'click',
+  downloadWeeklyPNG
+);

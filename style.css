@@ -37,3 +37,274 @@ main{max-width:1050px;margin:24px auto;padding:0 16px}
 .fixed-row select{display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #d6dae5;border-radius:9px;background:#fff;font:inherit}
 .fixed-status{font-size:12px;color:#6f788b;padding-bottom:10px}
 @media(max-width:750px){.fixed-row{grid-template-columns:1fr}}
+
+
+/* ==================================
+   WEEKLY TABLE BUTTON
+================================== */
+
+.sh{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.weekly-view-btn{
+  flex-shrink:0;
+  background:#505cdc;
+  color:#fff;
+  padding:9px 13px;
+  border-radius:8px;
+  font-size:12px;
+  transition:background .2s ease,
+             transform .2s ease,
+             box-shadow .2s ease;
+}
+
+.weekly-view-btn:hover{
+  background:#3946c7;
+  transform:translateY(-2px);
+  box-shadow:0 5px 12px #505cdc35;
+}
+
+
+/* ==================================
+   WEEKLY TABLE POPUP
+================================== */
+
+.weekly-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.weekly-modal:not(.hidden){
+  display:flex;
+}
+
+.weekly-modal-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15,23,42,.62);
+  backdrop-filter:blur(3px);
+}
+
+.weekly-modal-panel{
+  position:relative;
+  width:min(850px,100%);
+  max-height:85vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 20px 60px #0003;
+}
+
+.weekly-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.weekly-modal-header h2{
+  margin:0;
+  font-size:20px;
+}
+
+.weekly-modal-close{
+  width:36px;
+  height:36px;
+  padding:0;
+  border-radius:9px;
+  font-size:25px;
+  line-height:1;
+  background:#f0f2f7;
+  color:#26304a;
+}
+
+.weekly-modal-close:hover{
+  background:#e1e5ef;
+}
+
+
+/* ==================================
+   WEEKLY TABLE DESIGN
+================================== */
+
+.weekly-table-container{
+  width:100%;
+  overflow-x:auto;
+}
+
+.weekly-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:440px;
+  font-size:13px;
+}
+
+.weekly-table th,
+.weekly-table td{
+  padding:12px;
+  border:1px solid #e5e8ef;
+  text-align:left;
+  vertical-align:top;
+}
+
+.weekly-table thead th{
+  background:#505cdc;
+  color:#fff;
+  font-weight:700;
+}
+
+.weekly-table tbody th{
+  width:125px;
+  background:#f5f6fb;
+  color:#26304a;
+}
+
+.weekly-entries{
+  display:grid;
+  gap:9px;
+}
+
+.weekly-entry{
+  padding:10px 12px;
+  border:1px solid #e1e5f0;
+  border-radius:9px;
+  background:#fafbff;
+}
+
+.weekly-entry-time{
+  color:#505cdc;
+  font-weight:800;
+  margin-bottom:5px;
+}
+
+.weekly-entry-course{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:baseline;
+}
+
+.weekly-entry-course span{
+  color:#687287;
+  font-size:12px;
+}
+
+.weekly-entry-details{
+  margin-top:5px;
+  color:#687287;
+  font-size:12px;
+}
+
+.weekly-entry-details strong{
+  color:#26304a;
+}
+
+.weekly-no-class{
+  color:#929bad;
+  font-style:italic;
+}
+
+body.modal-open{
+  overflow:hidden;
+}
+
+
+/* ==================================
+   RESPONSIVE DESIGN
+================================== */
+
+@media(max-width:600px){
+
+  .weekly-modal{
+    padding:10px;
+  }
+
+  .weekly-modal-panel{
+    padding:15px;
+    border-radius:12px;
+    max-height:90vh;
+  }
+
+  .weekly-modal-header h2{
+    font-size:17px;
+  }
+
+  .sh{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .weekly-view-btn{
+    width:100%;
+  }
+
+}
+
+
+
+/* Weekly Modal Action Buttons */
+
+.weekly-modal-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.download-weekly-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+
+  padding:10px 15px;
+
+  background:#16a34a;
+  color:#ffffff;
+
+  border:none;
+  border-radius:9px;
+
+  font-size:13px;
+  font-weight:700;
+
+  cursor:pointer;
+
+  transition:all .25s ease;
+}
+
+.download-weekly-btn:hover{
+  background:#15803d;
+  transform:translateY(-2px);
+  box-shadow:0 5px 14px #16a34a35;
+}
+
+.download-weekly-btn:disabled{
+  opacity:.65;
+  cursor:wait;
+  transform:none;
+}
+
+@media(max-width:600px){
+
+  .weekly-modal-header{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .weekly-modal-actions{
+    width:100%;
+    justify-content:space-between;
+  }
+
+}
